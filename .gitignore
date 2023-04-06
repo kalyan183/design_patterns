@@ -1,0 +1,10 @@
+/.gtm/
+pom.xml.backup
+/data/
+/enforcement-page-cache-gateway.iml
+/logs/
+/target/
+.idea
+.project
+.settings/
+.classpath

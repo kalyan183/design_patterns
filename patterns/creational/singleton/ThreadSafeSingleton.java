@@ -1,34 +1,52 @@
 package org.examples.patterns.creational.singleton;
 
+import java.io.Serializable;
+
 /**
- * However, the first call to getInstance() will create the object and only the few threads trying to access it during that time need to be synchronized;
- * after that all calls just get a reference to the member variable.
- * Since synchronizing a method could in some extreme cases decrease performance by a factor of 100 or higher,[5]
- * the overhead of acquiring and releasing a lock every time this method is called seems unnecessary:
- * once the initialization has been completed, acquiring and releasing the locks would appear unnecessary.
- * 1) Check that the variable is initialized (without obtaining the lock). If it is initialized, return it immediately.
- * 3) Obtain the lock.
- * 3) Double-check whether the variable has already been initialized: if another thread acquired the lock first, it may have already done the initialization. If so, return the initialized variable.
- * 4) Otherwise, initialize and return the variable.
+ * In the getInstance method, we first check if the instance variable is null.
+ * If it is null, we acquire a lock on the DoubleCheckedLockingSingleton class using the synchronized keyword.
+ * We then check the instance variable again to ensure that no other thread has created an instance
+ * while we were waiting to acquire the lock.
+ * <p>
  */
-public class ThreadSafeSingleton {
+public final class ThreadSafeSingleton implements Cloneable, Serializable {
 
-
-    private static volatile ThreadSafeSingleton INSTANCE;
+    // The volatile keyword ensures that changes made to the instance variable are immediately visible to all threads
+    private static volatile ThreadSafeSingleton instance = null;
 
     private ThreadSafeSingleton() {
 
+        // prevent creation of object using reflection
+        if (instance != null) {
+            throw new IllegalStateException("Already instantiated");
+        }
+
+    }
+
+    @Override
+    public Object clone() throws CloneNotSupportedException {
+        throw new CloneNotSupportedException("Cannot clone instance of this class");
+    }
+
+    // When you also want to be able to serialize your object
+    // you need to make sure that deserialization won't create a copy.
+    private ThreadSafeSingleton readResolve() {
+        return getInstance();
     }
 
     public static ThreadSafeSingleton getInstance() {
-        if(null == INSTANCE) {
+        // The first check for null ensures that we don't synchronize unnecessarily
+        if (null == instance) {
             synchronized (ThreadSafeSingleton.class) {
-                if(null == INSTANCE) {
-                    INSTANCE = new ThreadSafeSingleton();
+                // the second check ensures that we don't create multiple instances
+                // if multiple threads enter the synchronized block.
+                if (null == instance) {
+                    instance = new ThreadSafeSingleton();
                 }
             }
         }
-        return INSTANCE;
-    }
 
+        return instance;
+
+    }
 }
